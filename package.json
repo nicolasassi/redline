@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "node esbuild.config.mjs",
     "build": "node esbuild.config.mjs production",
-    "test": "vitest run"
+    "test": "vitest run",
+    "deploy": "cp manifest.json main.js styles.css /Users/nicolas.sassi/dev/nu/nico-brain/.obsidian/plugins/obsidian-review/",
+    "build:deploy": "npm run build && npm run deploy"
   },
   "devDependencies": {
     "@types/node": "^20.10.0",
