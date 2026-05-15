@@ -1,0 +1,16 @@
+.review-header h4 { margin: 0 0 8px 0; }
+.review-filters { display: flex; gap: 4px; margin-bottom: 12px; }
+.review-filters button { padding: 4px 8px; cursor: pointer; }
+.review-filters button.active { background: var(--interactive-accent); color: var(--text-on-accent); }
+.review-copy-prompt { margin-bottom: 12px; width: 100%; padding: 6px; cursor: pointer; }
+.review-card { border: 1px solid var(--background-modifier-border); border-radius: 6px; padding: 8px; margin-bottom: 8px; }
+.review-card-open { border-left: 3px solid var(--color-yellow); }
+.review-card-resolved { border-left: 3px solid var(--color-base-50); opacity: 0.7; }
+.review-card-stale { border-left: 3px solid var(--color-red); }
+.review-card-header { display: flex; justify-content: space-between; font-size: 0.85em; margin-bottom: 4px; }
+.review-card-id { font-weight: bold; }
+.review-card-target { font-style: italic; color: var(--text-muted); }
+.review-card-body { margin: 4px 0; white-space: pre-wrap; }
+.review-card-resolution, .review-card-note { font-size: 0.85em; color: var(--text-muted); margin: 4px 0; }
+.review-card-actions { display: flex; gap: 4px; margin-top: 6px; }
+.review-card-actions button { padding: 2px 8px; cursor: pointer; }
