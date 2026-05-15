@@ -1,0 +1,9 @@
+{
+  "id": "obsidian-review",
+  "name": "Review",
+  "version": "0.1.0",
+  "minAppVersion": "1.4.0",
+  "description": "PR-style review comments on Obsidian documents. Comments stored in a sidecar markdown file for fire-and-forget edits by Claude Code.",
+  "author": "Nicolas Sassi",
+  "isDesktopOnly": false
+}
