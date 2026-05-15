@@ -37,6 +37,10 @@ export function parseSidecar(text: string): Sidecar {
     throw new Error("Sidecar missing frontmatter");
   }
   const fm = parseFrontmatter(fmMatch[1]);
+  const formatVersion = parseInt(fm.format_version ?? "0", 10);
+  if (formatVersion !== 1) {
+    throw new Error(`Unsupported format_version: ${fm.format_version ?? ""}`);
+  }
   const body = text.slice(fmMatch[0].length);
 
   const comments: ReviewComment[] = [];
@@ -90,7 +94,7 @@ export function parseSidecar(text: string): Sidecar {
 
   return {
     reviewFor: fm.review_for ?? "",
-    formatVersion: parseInt(fm.format_version ?? "0", 10),
+    formatVersion,
     updated: fm.updated ?? "",
     comments,
   };

@@ -67,6 +67,29 @@ describe("parseSidecar", () => {
     expect(c2.resolved).toBe("2026-05-15T10:30:00Z");
     expect(c2.resolution).toContain("regenerated PlantUML");
   });
+
+  it("throws when format_version is not 1", () => {
+    const bad = `---
+review_for: foo.md
+format_version: 2
+updated: 2026-05-15T10:30:00Z
+---
+
+# Review: foo.md
+`;
+    expect(() => parseSidecar(bad)).toThrow(/Unsupported format_version/);
+  });
+
+  it("throws when format_version is missing", () => {
+    const bad = `---
+review_for: foo.md
+updated: 2026-05-15T10:30:00Z
+---
+
+# Review: foo.md
+`;
+    expect(() => parseSidecar(bad)).toThrow(/Unsupported format_version/);
+  });
 });
 
 describe("serializeSidecar", () => {
