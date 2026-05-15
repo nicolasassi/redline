@@ -8,12 +8,19 @@ import {
   setGutterEntries,
   GutterEntry,
 } from "./editor/gutter";
+import {
+  ReviewSettings,
+  DEFAULT_SETTINGS,
+  ReviewSettingTab,
+} from "./settings";
 
 export default class ReviewPlugin extends Plugin {
   store!: CommentStore;
+  settings!: ReviewSettings;
 
   async onload() {
-    this.store = new CommentStore(this.app);
+    await this.loadSettings();
+    this.store = new CommentStore(this.app, this.settings);
     registerAddCommentCommand(this.app, this.store, (cmd) => this.addCommand(cmd));
 
     this.registerView(REVIEW_VIEW_TYPE, (leaf: WorkspaceLeaf) => new ReviewSidebar(leaf, this.store));
@@ -53,6 +60,7 @@ export default class ReviewPlugin extends Plugin {
     });
 
     this.addRibbonIcon("messages-square", "Review sidebar", () => this.toggleSidebar());
+    this.addSettingTab(new ReviewSettingTab(this.app, this));
 
     this.registerEvent(this.app.workspace.on("file-open", () => this.refreshGutter()));
     this.registerEvent(this.app.vault.on("modify", () => this.refreshGutter()));
@@ -62,6 +70,14 @@ export default class ReviewPlugin extends Plugin {
 
   async onunload() {
     this.app.workspace.detachLeavesOfType(REVIEW_VIEW_TYPE);
+  }
+
+  async loadSettings() {
+    this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+  }
+
+  async saveSettings() {
+    await this.saveData(this.settings);
   }
 
   private async toggleSidebar() {

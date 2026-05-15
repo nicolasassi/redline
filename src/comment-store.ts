@@ -15,9 +15,16 @@ import {
 const SIDECAR_SUFFIX = ".review.md";
 
 export class CommentStore {
-  constructor(private app: App) {}
+  constructor(
+    private app: App,
+    private settings: { sidecarLocation: "alongside" | "central"; centralFolder: string }
+  ) {}
 
   sidecarPathFor(docPath: string): string {
+    if (this.settings.sidecarLocation === "central") {
+      const safe = docPath.replace(/\//g, "__");
+      return normalizePath(`${this.settings.centralFolder}/${safe}${SIDECAR_SUFFIX}`);
+    }
     return normalizePath(docPath + SIDECAR_SUFFIX);
   }
 
