@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { parseSidecar } from "./sidecar";
+import { parseSidecar, serializeSidecar } from "./sidecar";
 
 const SAMPLE = `---
 review_for: scheduled-payments.md
@@ -66,5 +66,21 @@ describe("parseSidecar", () => {
     const c2 = result.comments[1];
     expect(c2.resolved).toBe("2026-05-15T10:30:00Z");
     expect(c2.resolution).toContain("regenerated PlantUML");
+  });
+});
+
+describe("serializeSidecar", () => {
+  it("round-trips: parse → serialize → parse yields the same data", () => {
+    const original = parseSidecar(SAMPLE);
+    const serialized = serializeSidecar(original);
+    const reparsed = parseSidecar(serialized);
+    expect(reparsed).toEqual(original);
+  });
+
+  it("emits a callout per comment with the correct title", () => {
+    const sidecar = parseSidecar(SAMPLE);
+    const text = serializeSidecar(sidecar);
+    expect(text).toMatch(/> \[!review-comment\]\+? c1 · open/);
+    expect(text).toMatch(/> \[!review-comment\]\+? c2 · resolved/);
   });
 });

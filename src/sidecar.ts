@@ -106,3 +106,33 @@ function parseFrontmatter(text: string): Record<string, string> {
   }
   return result;
 }
+
+export function serializeSidecar(sidecar: Sidecar): string {
+  const lines: string[] = [];
+  lines.push("---");
+  lines.push(`review_for: ${sidecar.reviewFor}`);
+  lines.push(`format_version: ${sidecar.formatVersion}`);
+  lines.push(`updated: ${sidecar.updated}`);
+  lines.push("---");
+  lines.push("");
+  lines.push(`# Review: ${sidecar.reviewFor}`);
+  lines.push("");
+
+  for (const c of sidecar.comments) {
+    const fold = c.status === "open" ? "+" : "";
+    lines.push(`> [!review-comment]${fold} ${c.id} · ${c.status}`);
+    lines.push(`> anchor: ${c.anchor}`);
+    lines.push(`> target: ${c.target}`);
+    lines.push(`> created: ${c.created}`);
+    if (c.resolved) lines.push(`> resolved: ${c.resolved}`);
+    if (c.resolution) lines.push(`> resolution: ${c.resolution}`);
+    if (c.note) lines.push(`> note: ${c.note}`);
+    lines.push(">");
+    for (const bodyLine of c.body.split("\n")) {
+      lines.push(`> ${bodyLine}`);
+    }
+    lines.push("");
+  }
+
+  return lines.join("\n");
+}
