@@ -19,7 +19,7 @@ export class ReviewSidebar extends ItemView {
     return REVIEW_VIEW_TYPE;
   }
   getDisplayText() {
-    return "Review";
+    return "Inline Review";
   }
   getIcon() {
     return "messages-square";

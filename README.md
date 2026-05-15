@@ -1,4 +1,4 @@
-# Review
+# Inline Review
 
 Add PR-style review comments to any document in your Obsidian vault. Anchor comments to specific paragraphs, headings, list items, images, code blocks, callouts, or tables — your source documents stay clean because comments live in a sibling `.review.md` sidecar file.
 
@@ -27,7 +27,7 @@ The plugin is intentionally protocol-based: it stores comments in a documented [
 
 ### From the Obsidian community catalog (once published)
 
-Settings → Community plugins → Browse → search "Review" → Install → Enable.
+Settings → Community plugins → Browse → search "Inline Review" → Install → Enable.
 
 ### Manual install
 
@@ -39,7 +39,7 @@ Settings → Community plugins → Browse → search "Review" → Install → En
    npm run build
    ```
 2. Copy `manifest.json`, `main.js`, and `styles.css` to `<vault>/.obsidian/plugins/obsidian-review/`.
-3. Reload Obsidian → Settings → Community plugins → enable "Review".
+3. Reload Obsidian → Settings → Community plugins → enable "Inline Review".
 
 ## Usage
 
