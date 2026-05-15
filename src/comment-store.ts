@@ -110,4 +110,26 @@ export class CommentStore {
     sidecar.comments = sidecar.comments.filter((c) => c.id !== commentId);
     await this.writeSidecar(docPath, sidecar);
   }
+
+  async markStaleAnchors(docPath: string): Promise<number> {
+    const sidecar = await this.readSidecar(docPath);
+    if (!sidecar) return 0;
+
+    const docFile = this.app.vault.getAbstractFileByPath(docPath);
+    if (!(docFile instanceof TFile)) return 0;
+    const text = await this.app.vault.read(docFile);
+
+    let changed = 0;
+    for (const c of sidecar.comments) {
+      if (c.status !== "open") continue;
+      const idMatch = c.anchor.replace(/^\^/, "");
+      if (!text.includes(`^${idMatch}`)) {
+        c.status = "stale";
+        c.note = "anchor not found in source";
+        changed++;
+      }
+    }
+    if (changed > 0) await this.writeSidecar(docPath, sidecar);
+    return changed;
+  }
 }

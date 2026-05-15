@@ -62,7 +62,14 @@ export default class ReviewPlugin extends Plugin {
     this.addRibbonIcon("messages-square", "Review sidebar", () => this.toggleSidebar());
     this.addSettingTab(new ReviewSettingTab(this.app, this));
 
-    this.registerEvent(this.app.workspace.on("file-open", () => this.refreshGutter()));
+    this.registerEvent(
+      this.app.workspace.on("file-open", async (file) => {
+        if (file && !file.path.endsWith(".review.md")) {
+          await this.store.markStaleAnchors(file.path);
+        }
+        await this.refreshGutter();
+      })
+    );
     this.registerEvent(this.app.vault.on("modify", () => this.refreshGutter()));
 
     console.log("obsidian-review: loaded");
