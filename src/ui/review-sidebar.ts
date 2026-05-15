@@ -9,6 +9,7 @@ type Filter = "all" | "open" | "resolved" | "stale";
 export class ReviewSidebar extends ItemView {
   private filter: Filter = "open";
   private currentDocPath: string | null = null;
+  private renderGen = 0;
 
   constructor(leaf: WorkspaceLeaf, private store: CommentStore) {
     super(leaf);
@@ -28,7 +29,14 @@ export class ReviewSidebar extends ItemView {
     this.registerEvent(
       this.app.workspace.on("active-leaf-change", () => this.refresh())
     );
-    this.registerEvent(this.app.vault.on("modify", () => this.refresh()));
+    this.registerEvent(
+      this.app.vault.on("modify", (file) => {
+        if (!this.currentDocPath) return;
+        const sidecarPath = this.currentDocPath + ".review.md";
+        if (file.path !== this.currentDocPath && file.path !== sidecarPath) return;
+        this.refresh();
+      })
+    );
     await this.refresh();
   }
 
@@ -39,15 +47,19 @@ export class ReviewSidebar extends ItemView {
   }
 
   private async render() {
+    const gen = ++this.renderGen;
     const root = this.contentEl;
-    root.empty();
 
     if (!this.currentDocPath || this.currentDocPath.endsWith(".review.md")) {
+      if (gen !== this.renderGen) return;
+      root.empty();
       root.createEl("p", { text: "No reviewable document is active." });
       return;
     }
 
     const sidecar = await this.store.readSidecar(this.currentDocPath);
+    if (gen !== this.renderGen) return;
+    root.empty();
     const all = sidecar?.comments ?? [];
     const counts = {
       open: all.filter((c) => c.status === "open").length,
@@ -75,7 +87,7 @@ export class ReviewSidebar extends ItemView {
       cls: "review-copy-prompt",
     });
     copyBtn.onclick = async () => {
-      await navigator.clipboard.writeText(`/review-act ${this.currentDocPath}`);
+      await navigator.clipboard.writeText(`/review-act "${this.currentDocPath}"`);
       new Notice("Copied to clipboard");
     };
 

@@ -40,7 +40,7 @@ export default class ReviewPlugin extends Plugin {
         const path = view?.file?.path;
         if (!path || path.endsWith(".review.md")) return false;
         if (!checking) {
-          navigator.clipboard.writeText(`/review-act ${path}`);
+          navigator.clipboard.writeText(`/review-act "${path}"`);
           new Notice("Copied to clipboard");
         }
         return true;
@@ -70,7 +70,16 @@ export default class ReviewPlugin extends Plugin {
         await this.refreshGutter();
       })
     );
-    this.registerEvent(this.app.vault.on("modify", () => this.refreshGutter()));
+    this.registerEvent(
+      this.app.vault.on("modify", (file) => {
+        const view = this.app.workspace.getActiveViewOfType(MarkdownView);
+        const activePath = view?.file?.path;
+        if (!activePath) return;
+        const sidecarPath = this.store.sidecarPathFor(activePath);
+        if (file.path !== activePath && file.path !== sidecarPath) return;
+        this.refreshGutter();
+      })
+    );
 
     console.log("obsidian-review: loaded");
   }
