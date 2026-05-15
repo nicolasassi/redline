@@ -76,7 +76,12 @@ export class CommentStore {
       updated: new Date().toISOString(),
       comments: [],
     };
-    const nextId = `c${sidecar.comments.length + 1}`;
+    const highest = sidecar.comments.reduce((max, c) => {
+      const m = c.id.match(/^c(\d+)$/);
+      const n = m ? parseInt(m[1], 10) : 0;
+      return n > max ? n : max;
+    }, 0);
+    const nextId = `c${highest + 1}`;
     const comment: ReviewComment = {
       id: nextId,
       status: "open",
