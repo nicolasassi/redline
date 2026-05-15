@@ -82,15 +82,6 @@ export class ReviewSidebar extends ItemView {
       };
     }
 
-    const copyBtn = root.createEl("button", {
-      text: "Copy prompt for Claude Code",
-      cls: "review-copy-prompt",
-    });
-    copyBtn.onclick = async () => {
-      await navigator.clipboard.writeText(`/review-act "${this.currentDocPath}"`);
-      new Notice("Copied to clipboard");
-    };
-
     const visible = all.filter((c) => this.filter === "all" || c.status === this.filter);
     for (const c of visible) {
       this.renderCommentCard(root, c);

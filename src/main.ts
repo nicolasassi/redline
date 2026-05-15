@@ -33,21 +33,6 @@ export default class ReviewPlugin extends Plugin {
     });
 
     this.addCommand({
-      id: "copy-prompt",
-      name: "Copy prompt for Claude Code",
-      checkCallback: (checking) => {
-        const view = this.app.workspace.getActiveViewOfType(MarkdownView);
-        const path = view?.file?.path;
-        if (!path || path.endsWith(".review.md")) return false;
-        if (!checking) {
-          navigator.clipboard.writeText(`/review-act "${path}"`);
-          new Notice("Copied to clipboard");
-        }
-        return true;
-      },
-    });
-
-    this.addCommand({
       id: "jump-next-open",
       name: "Jump to next open comment",
       checkCallback: (checking) => {

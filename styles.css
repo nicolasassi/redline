@@ -2,7 +2,6 @@
 .review-filters { display: flex; gap: 4px; margin-bottom: 12px; }
 .review-filters button { padding: 4px 8px; cursor: pointer; }
 .review-filters button.active { background: var(--interactive-accent); color: var(--text-on-accent); }
-.review-copy-prompt { margin-bottom: 12px; width: 100%; padding: 6px; cursor: pointer; }
 .review-card { border: 1px solid var(--background-modifier-border); border-radius: 6px; padding: 8px; margin-bottom: 8px; }
 .review-card-open { border-left: 3px solid var(--color-yellow); }
 .review-card-resolved { border-left: 3px solid var(--color-base-50); opacity: 0.7; }
