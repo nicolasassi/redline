@@ -1,7 +1,13 @@
-import { Plugin, WorkspaceLeaf, MarkdownView, Notice } from "obsidian";
+import { Plugin, WorkspaceLeaf, MarkdownView, TFile, Notice } from "obsidian";
+import { EditorView } from "@codemirror/view";
 import { CommentStore } from "./comment-store";
 import { registerAddCommentCommand } from "./commands";
 import { ReviewSidebar, REVIEW_VIEW_TYPE } from "./ui/review-sidebar";
+import {
+  reviewGutterExtension,
+  setGutterEntries,
+  GutterEntry,
+} from "./editor/gutter";
 
 export default class ReviewPlugin extends Plugin {
   store!: CommentStore;
@@ -11,6 +17,7 @@ export default class ReviewPlugin extends Plugin {
     registerAddCommentCommand(this.app, this.store, (cmd) => this.addCommand(cmd));
 
     this.registerView(REVIEW_VIEW_TYPE, (leaf: WorkspaceLeaf) => new ReviewSidebar(leaf, this.store));
+    this.registerEditorExtension(reviewGutterExtension());
 
     this.addCommand({
       id: "toggle-sidebar",
@@ -40,14 +47,15 @@ export default class ReviewPlugin extends Plugin {
         const view = this.app.workspace.getActiveViewOfType(MarkdownView);
         const file = view?.file;
         if (!file || file.path.endsWith(".review.md")) return false;
-        if (!checking) {
-          this.jumpToNextOpen(file.path);
-        }
+        if (!checking) this.jumpToNextOpen(file.path);
         return true;
       },
     });
 
     this.addRibbonIcon("messages-square", "Review sidebar", () => this.toggleSidebar());
+
+    this.registerEvent(this.app.workspace.on("file-open", () => this.refreshGutter()));
+    this.registerEvent(this.app.vault.on("modify", () => this.refreshGutter()));
 
     console.log("obsidian-review: loaded");
   }
@@ -72,11 +80,8 @@ export default class ReviewPlugin extends Plugin {
     if (!sidecar) return;
     const view = this.app.workspace.getActiveViewOfType(MarkdownView);
     if (!view?.editor) return;
-
-    const text = view.editor.getValue();
-    const lines = text.split("\n");
+    const lines = view.editor.getValue().split("\n");
     const cursorLine = view.editor.getCursor("from").line;
-
     const candidates = sidecar.comments
       .filter((c) => c.status === "open")
       .map((c) => {
@@ -85,12 +90,10 @@ export default class ReviewPlugin extends Plugin {
       })
       .filter((e) => e.line >= 0)
       .sort((a, b) => a.line - b.line);
-
     if (candidates.length === 0) {
       new Notice("No open comments");
       return;
     }
-
     const next = candidates.find((e) => e.line > cursorLine) ?? candidates[0];
     view.editor.setCursor({ line: next.line, ch: 0 });
     view.editor.scrollIntoView(
@@ -98,5 +101,30 @@ export default class ReviewPlugin extends Plugin {
       true
     );
     new Notice(`Jumped to ${next.id}`);
+  }
+
+  private async refreshGutter() {
+    const view = this.app.workspace.getActiveViewOfType(MarkdownView);
+    if (!view || !view.file) return;
+    const file = view.file;
+    if (!(file instanceof TFile) || file.path.endsWith(".review.md")) return;
+
+    const sidecar = await this.store.readSidecar(file.path);
+    if (!sidecar) return;
+
+    const text = await this.app.vault.read(file);
+    const lines = text.split("\n");
+    const entries: GutterEntry[] = [];
+    for (const c of sidecar.comments) {
+      const idMatch = c.anchor.replace(/^\^/, "");
+      const lineIndex = lines.findIndex((l) => l.includes(`^${idMatch}`));
+      if (lineIndex >= 0) entries.push({ line: lineIndex, status: c.status });
+    }
+
+    // @ts-expect-error access internal CM6 editor
+    const cm: EditorView | undefined = view.editor.cm;
+    if (cm) {
+      cm.dispatch({ effects: setGutterEntries.of(entries) });
+    }
   }
 }

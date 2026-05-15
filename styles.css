@@ -14,3 +14,8 @@
 .review-card-resolution, .review-card-note { font-size: 0.85em; color: var(--text-muted); margin: 4px 0; }
 .review-card-actions { display: flex; gap: 4px; margin-top: 6px; }
 .review-card-actions button { padding: 2px 8px; cursor: pointer; }
+.review-gutter { width: 12px; }
+.review-gutter-dot { width: 8px; height: 8px; border-radius: 50%; margin: 4px 2px; }
+.review-gutter-open { background: var(--color-yellow); }
+.review-gutter-resolved { background: var(--color-base-40); }
+.review-gutter-stale { background: var(--color-red); }
