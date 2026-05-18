@@ -1,6 +1,6 @@
 import { Plugin, WorkspaceLeaf, MarkdownView, TFile, Notice } from "obsidian";
 import { EditorView } from "@codemirror/view";
-import { CommentStore } from "./comment-store";
+import { CommentStore, SIDECAR_SUFFIX } from "./comment-store";
 import { registerAddCommentCommand } from "./commands";
 import { ReviewSidebar, REVIEW_VIEW_TYPE } from "./ui/review-sidebar";
 import {
@@ -8,6 +8,8 @@ import {
   setGutterEntries,
   GutterEntry,
 } from "./editor/gutter";
+import { reviewHoverExtension, setHoverState } from "./editor/hover";
+import { ReviewComment } from "./sidecar";
 import {
   ReviewSettings,
   DEFAULT_SETTINGS,
@@ -25,6 +27,7 @@ export default class ReviewPlugin extends Plugin {
 
     this.registerView(REVIEW_VIEW_TYPE, (leaf: WorkspaceLeaf) => new ReviewSidebar(leaf, this.store));
     this.registerEditorExtension(reviewGutterExtension());
+    this.registerEditorExtension(reviewHoverExtension());
 
     this.addCommand({
       id: "toggle-sidebar",
@@ -46,6 +49,13 @@ export default class ReviewPlugin extends Plugin {
 
     this.addRibbonIcon("messages-square", "Review sidebar", () => this.toggleSidebar());
     this.addSettingTab(new ReviewSettingTab(this.app, this));
+
+    this.registerMarkdownPostProcessor((el, ctx) => {
+      if (!ctx.sourcePath.endsWith(SIDECAR_SUFFIX)) return;
+      const sourcePath = this.store.sourcePathFor(ctx.sourcePath);
+      if (!sourcePath) return;
+      this.injectArchivedActions(el, sourcePath);
+    });
 
     this.registerEvent(
       this.app.workspace.on("file-open", async (file) => {
@@ -120,6 +130,40 @@ export default class ReviewPlugin extends Plugin {
     new Notice(`Jumped to ${next.id}`);
   }
 
+  private injectArchivedActions(el: HTMLElement, sourcePath: string) {
+    const callouts = el.querySelectorAll<HTMLElement>('.callout[data-callout="review-comment"]');
+    callouts.forEach((callout) => {
+      const titleEl = callout.querySelector(".callout-title-inner");
+      if (!titleEl) return;
+      const titleText = titleEl.textContent ?? "";
+      const m = titleText.match(/^\s*(\S+)\s*·\s*(\S+)/);
+      if (!m) return;
+      const [, id, status] = m;
+      if (status !== "archived") return;
+      if (callout.querySelector(".review-archived-actions")) return;
+
+      const actions = callout.createDiv({ cls: "review-archived-actions" });
+      const restore = actions.createEl("button", { text: "Bring back", cls: "review-restore-btn" });
+      restore.onclick = async () => {
+        try {
+          await this.store.restoreComment(sourcePath, id);
+          new Notice(`Restored ${id}`);
+        } catch (e) {
+          new Notice(`Restore failed: ${(e as Error).message}`);
+        }
+      };
+      const del = actions.createEl("button", { text: "Delete", cls: "review-delete-btn" });
+      del.onclick = async () => {
+        try {
+          await this.store.deleteComment(sourcePath, id);
+          new Notice(`Deleted ${id}`);
+        } catch (e) {
+          new Notice(`Delete failed: ${(e as Error).message}`);
+        }
+      };
+    });
+  }
+
   private async refreshGutter() {
     const view = this.app.workspace.getActiveViewOfType(MarkdownView);
     if (!view || !view.file) return;
@@ -132,16 +176,35 @@ export default class ReviewPlugin extends Plugin {
     const text = await this.app.vault.read(file);
     const lines = text.split("\n");
     const entries: GutterEntry[] = [];
+    const byAnchor = new Map<string, ReviewComment>();
     for (const c of sidecar.comments) {
+      if (c.status === "archived") continue;
       const idMatch = c.anchor.replace(/^\^/, "");
       const lineIndex = lines.findIndex((l) => l.includes(`^${idMatch}`));
       if (lineIndex >= 0) entries.push({ line: lineIndex, status: c.status });
+      if (idMatch) byAnchor.set(idMatch, c);
     }
+
+    const docPath = file.path;
+    const onArchive = async (commentId: string) => {
+      try {
+        await this.store.archiveComment(docPath, commentId);
+        new Notice(`Archived ${commentId}`);
+        await this.refreshGutter();
+      } catch (err) {
+        new Notice(`Archive failed: ${(err as Error).message}`);
+      }
+    };
 
     // @ts-expect-error access internal CM6 editor
     const cm: EditorView | undefined = view.editor.cm;
     if (cm) {
-      cm.dispatch({ effects: setGutterEntries.of(entries) });
+      cm.dispatch({
+        effects: [
+          setGutterEntries.of(entries),
+          setHoverState.of({ comments: byAnchor, docPath, onArchive }),
+        ],
+      });
     }
   }
 }

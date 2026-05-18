@@ -1,4 +1,4 @@
-export type CommentStatus = "open" | "resolved" | "stale";
+export type CommentStatus = "open" | "resolved" | "stale" | "archived";
 
 export type CommentTarget =
   | "paragraph"
@@ -18,6 +18,8 @@ export interface ReviewComment {
   resolved?: string;
   resolution?: string;
   note?: string;
+  previousStatus?: CommentStatus;
+  anchorContext?: string;
   body: string;
 }
 
@@ -88,6 +90,8 @@ export function parseSidecar(text: string): Sidecar {
       resolved: metadata.resolved,
       resolution: metadata.resolution,
       note: metadata.note,
+      previousStatus: metadata.previous_status as CommentStatus | undefined,
+      anchorContext: metadata.anchor_context,
       body: bodyLines.join("\n").trimEnd(),
     });
   }
@@ -131,6 +135,8 @@ export function serializeSidecar(sidecar: Sidecar): string {
     if (c.resolved) lines.push(`> resolved: ${c.resolved}`);
     if (c.resolution) lines.push(`> resolution: ${c.resolution}`);
     if (c.note) lines.push(`> note: ${c.note}`);
+    if (c.previousStatus) lines.push(`> previous_status: ${c.previousStatus}`);
+    if (c.anchorContext) lines.push(`> anchor_context: ${c.anchorContext}`);
     lines.push(">");
     for (const bodyLine of c.body.split("\n")) {
       lines.push(`> ${bodyLine}`);

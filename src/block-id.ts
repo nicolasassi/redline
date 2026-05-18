@@ -114,6 +114,46 @@ function existingIdInDoc(lines: string[], targetIdx: number, target: CommentTarg
   return null;
 }
 
+export interface RemoveResult {
+  text: string;
+  anchorLine: string | null;
+}
+
+export function removeBlockId(doc: string, anchorId: string): RemoveResult {
+  const lines = doc.split("\n");
+  const inlineRe = new RegExp(`\\s*\\^${anchorId}(?![a-z0-9])`);
+  const standaloneRe = new RegExp(`^\\s*\\^${anchorId}\\s*$`);
+  const calloutStandaloneRe = new RegExp(`^\\s*>\\s*\\^${anchorId}\\s*$`);
+
+  for (let i = 0; i < lines.length; i++) {
+    if (standaloneRe.test(lines[i])) {
+      // Walk back to the last non-blank line before the anchor — that's its context.
+      let ctxIdx = i - 1;
+      while (ctxIdx >= 0 && lines[ctxIdx].trim() === "") ctxIdx--;
+      const anchorLine = ctxIdx >= 0 ? lines[ctxIdx] : null;
+
+      const prevBlank = i > 0 && lines[i - 1].trim() === "";
+      if (prevBlank) {
+        lines.splice(i - 1, 2);
+      } else {
+        lines.splice(i, 1);
+      }
+      return { text: lines.join("\n"), anchorLine };
+    }
+    if (calloutStandaloneRe.test(lines[i])) {
+      const anchorLine = i > 0 ? lines[i - 1] : null;
+      lines.splice(i, 1);
+      return { text: lines.join("\n"), anchorLine };
+    }
+    if (inlineRe.test(lines[i])) {
+      const cleaned = lines[i].replace(inlineRe, "");
+      lines[i] = cleaned;
+      return { text: lines.join("\n"), anchorLine: cleaned };
+    }
+  }
+  return { text: doc, anchorLine: null };
+}
+
 export function injectBlockId(
   doc: string,
   lineNumber: number,

@@ -4,6 +4,7 @@ import {
   injectBlockId,
   findExistingBlockId,
   findAllBlockIds,
+  removeBlockId,
 } from "./block-id";
 
 describe("generateBlockId", () => {
@@ -128,5 +129,49 @@ describe("injectBlockId", () => {
     const result = injectBlockId(doc, 0, "callout", "newone");
     expect(result.text).toBe(doc);
     expect(result.id).toBe("cl1cl1");
+  });
+});
+
+describe("removeBlockId", () => {
+  it("strips an inline anchor from a paragraph", () => {
+    const doc = "First paragraph. ^a3f9b1\n\nSecond paragraph.";
+    const result = removeBlockId(doc, "a3f9b1");
+    expect(result.text).toBe("First paragraph.\n\nSecond paragraph.");
+    expect(result.anchorLine).toBe("First paragraph.");
+  });
+
+  it("strips a standalone anchor line after a code block", () => {
+    const doc = "```ts\nconst x = 1;\n```\n^cb1cb1\n\nMore text.";
+    const result = removeBlockId(doc, "cb1cb1");
+    expect(result.text).toBe("```ts\nconst x = 1;\n```\n\nMore text.");
+    expect(result.anchorLine).toBe("```");
+  });
+
+  it("strips a standalone anchor after a table along with the preceding blank line", () => {
+    const doc = "| col1 | col2 |\n| ---- | ---- |\n| a | b |\n\n^tb1tb1\nFollowing text.";
+    const result = removeBlockId(doc, "tb1tb1");
+    expect(result.text).toBe("| col1 | col2 |\n| ---- | ---- |\n| a | b |\nFollowing text.");
+    expect(result.anchorLine).toBe("| a | b |");
+  });
+
+  it("strips a `> ^id` line from a callout", () => {
+    const doc = "> [!note] Important\n> Some content here.\n> ^cl1cl1\n\nAfter.";
+    const result = removeBlockId(doc, "cl1cl1");
+    expect(result.text).toBe("> [!note] Important\n> Some content here.\n\nAfter.");
+    expect(result.anchorLine).toBe("> Some content here.");
+  });
+
+  it("returns the original doc when the anchor is not found", () => {
+    const doc = "Plain paragraph.";
+    const result = removeBlockId(doc, "missin");
+    expect(result.text).toBe(doc);
+    expect(result.anchorLine).toBeNull();
+  });
+
+  it("does not remove a 6-char prefix inside a longer id-like run", () => {
+    const doc = "Para. ^a3f9b1xyz else";
+    const result = removeBlockId(doc, "a3f9b1");
+    expect(result.text).toBe(doc);
+    expect(result.anchorLine).toBeNull();
   });
 });

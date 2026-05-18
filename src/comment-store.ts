@@ -10,9 +10,10 @@ import {
   generateBlockId,
   findAllBlockIds,
   injectBlockId,
+  removeBlockId,
 } from "./block-id";
 
-const SIDECAR_SUFFIX = ".review.md";
+export const SIDECAR_SUFFIX = ".review.md";
 
 export class CommentStore {
   constructor(
@@ -26,6 +27,17 @@ export class CommentStore {
       return normalizePath(`${this.settings.centralFolder}/${safe}${SIDECAR_SUFFIX}`);
     }
     return normalizePath(docPath + SIDECAR_SUFFIX);
+  }
+
+  sourcePathFor(sidecarPath: string): string | null {
+    if (!sidecarPath.endsWith(SIDECAR_SUFFIX)) return null;
+    if (this.settings.sidecarLocation === "central") {
+      const folder = normalizePath(this.settings.centralFolder).replace(/\/$/, "") + "/";
+      if (!sidecarPath.startsWith(folder)) return null;
+      const stem = sidecarPath.slice(folder.length, sidecarPath.length - SIDECAR_SUFFIX.length);
+      return stem.replace(/__/g, "/");
+    }
+    return sidecarPath.slice(0, sidecarPath.length - SIDECAR_SUFFIX.length);
   }
 
   async readSidecar(docPath: string): Promise<Sidecar | null> {
@@ -113,6 +125,68 @@ export class CommentStore {
     const sidecar = await this.readSidecar(docPath);
     if (!sidecar) return;
     sidecar.comments = sidecar.comments.filter((c) => c.id !== commentId);
+    await this.writeSidecar(docPath, sidecar);
+  }
+
+  async archiveComment(docPath: string, commentId: string): Promise<void> {
+    const sidecar = await this.readSidecar(docPath);
+    if (!sidecar) throw new Error("no sidecar");
+    const comment = sidecar.comments.find((c) => c.id === commentId);
+    if (!comment) throw new Error(`comment not found: ${commentId}`);
+    if (comment.status === "archived") return;
+
+    const docFile = this.app.vault.getAbstractFileByPath(docPath);
+    if (docFile instanceof TFile) {
+      const text = await this.app.vault.read(docFile);
+      const anchorId = comment.anchor.replace(/^\^/, "");
+      const { text: cleaned, anchorLine } = removeBlockId(text, anchorId);
+      if (cleaned !== text) {
+        await this.app.vault.modify(docFile, cleaned);
+      }
+      if (anchorLine !== null) {
+        comment.anchorContext = anchorLine.trim();
+      }
+    }
+    comment.previousStatus = comment.status;
+    comment.status = "archived";
+    await this.writeSidecar(docPath, sidecar);
+  }
+
+  async restoreComment(docPath: string, commentId: string): Promise<void> {
+    const sidecar = await this.readSidecar(docPath);
+    if (!sidecar) throw new Error("no sidecar");
+    const comment = sidecar.comments.find((c) => c.id === commentId);
+    if (!comment) throw new Error(`comment not found: ${commentId}`);
+    if (comment.status !== "archived") return;
+
+    const docFile = this.app.vault.getAbstractFileByPath(docPath);
+    const anchorId = comment.anchor.replace(/^\^/, "");
+    let restored = false;
+
+    if (docFile instanceof TFile && comment.anchorContext) {
+      const text = await this.app.vault.read(docFile);
+      const lines = text.split("\n");
+      const needle = comment.anchorContext.trim();
+      const lineIndex = lines.findIndex((l) => l.trim() === needle);
+      if (lineIndex >= 0) {
+        const { text: newText } = injectBlockId(text, lineIndex, comment.target, anchorId);
+        if (newText !== text) {
+          await this.app.vault.modify(docFile, newText);
+        }
+        restored = true;
+      }
+    }
+
+    if (restored) {
+      comment.status = comment.previousStatus ?? "open";
+      delete comment.previousStatus;
+      delete comment.anchorContext;
+      delete comment.note;
+    } else {
+      comment.status = "stale";
+      comment.note = "anchor context not found on restore";
+      delete comment.previousStatus;
+    }
     await this.writeSidecar(docPath, sidecar);
   }
 

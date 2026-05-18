@@ -60,7 +60,7 @@ export class ReviewSidebar extends ItemView {
     const sidecar = await this.store.readSidecar(this.currentDocPath);
     if (gen !== this.renderGen) return;
     root.empty();
-    const all = sidecar?.comments ?? [];
+    const all = (sidecar?.comments ?? []).filter((c) => c.status !== "archived");
     const counts = {
       open: all.filter((c) => c.status === "open").length,
       resolved: all.filter((c) => c.status === "resolved").length,

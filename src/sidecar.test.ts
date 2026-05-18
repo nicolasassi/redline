@@ -107,3 +107,39 @@ describe("serializeSidecar", () => {
     expect(text).toMatch(/> \[!review-comment\]\+? c2 · resolved/);
   });
 });
+
+const ARCHIVED_SAMPLE = `---
+review_for: foo.md
+format_version: 1
+updated: 2026-05-18T10:00:00Z
+---
+
+# Review: foo.md
+
+> [!review-comment] c3 · archived
+> anchor: ^xyz123
+> target: paragraph
+> created: 2026-05-15T09:14:00Z
+> previous_status: open
+> anchor_context: This is the line where the anchor used to live.
+>
+> Body of the archived comment.
+`;
+
+describe("archived comments", () => {
+  it("parses previous_status and anchor_context", () => {
+    const result = parseSidecar(ARCHIVED_SAMPLE);
+    expect(result.comments).toHaveLength(1);
+    const c = result.comments[0];
+    expect(c.status).toBe("archived");
+    expect(c.previousStatus).toBe("open");
+    expect(c.anchorContext).toBe("This is the line where the anchor used to live.");
+  });
+
+  it("round-trips archived comments", () => {
+    const original = parseSidecar(ARCHIVED_SAMPLE);
+    const serialized = serializeSidecar(original);
+    const reparsed = parseSidecar(serialized);
+    expect(reparsed).toEqual(original);
+  });
+});
