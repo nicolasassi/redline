@@ -1,6 +1,6 @@
 {
-  "id": "inline-review",
-  "name": "Inline Review",
+  "id": "redline",
+  "name": "Redline",
   "version": "0.1.1",
   "minAppVersion": "1.4.0",
   "description": "Add PR-style review comments anchored to specific paragraphs, headings, images, code blocks, and tables. Comments live in a sibling .review.md sidecar so the source document stays clean.",

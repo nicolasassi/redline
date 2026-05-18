@@ -1,5 +1,5 @@
 {
-  "name": "inline-review",
+  "name": "redline",
   "version": "0.1.1",
   "private": true,
   "type": "module",
@@ -7,7 +7,7 @@
     "dev": "node esbuild.config.mjs",
     "build": "node esbuild.config.mjs production",
     "test": "vitest run",
-    "deploy": "mkdir -p /Users/nicolas.sassi/dev/nu/nico-brain/.obsidian/plugins/inline-review && cp manifest.json main.js styles.css /Users/nicolas.sassi/dev/nu/nico-brain/.obsidian/plugins/inline-review/",
+    "deploy": "mkdir -p /Users/nicolas.sassi/dev/nu/nico-brain/.obsidian/plugins/redline && cp manifest.json main.js styles.css /Users/nicolas.sassi/dev/nu/nico-brain/.obsidian/plugins/redline/",
     "build:deploy": "npm run build && npm run deploy"
   },
   "devDependencies": {

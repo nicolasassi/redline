@@ -1,4 +1,4 @@
-# Inline Review
+# Redline
 
 Add PR-style review comments to any document in your Obsidian vault. Anchor comments to specific paragraphs, headings, list items, images, code blocks, callouts, or tables — your source documents stay clean because comments live in a sibling `.review.md` sidecar file.
 
@@ -27,19 +27,19 @@ The plugin is intentionally protocol-based: it stores comments in a documented [
 
 ### From the Obsidian community catalog (once published)
 
-Settings → Community plugins → Browse → search "Inline Review" → Install → Enable.
+Settings → Community plugins → Browse → search "Redline" → Install → Enable.
 
 ### Manual install
 
 1. Build (or download a release):
    ```bash
    git clone <this-repo>
-   cd obsidian-review
+   cd redline
    npm install
    npm run build
    ```
-2. Copy `manifest.json`, `main.js`, and `styles.css` to `<vault>/.obsidian/plugins/obsidian-review/`.
-3. Reload Obsidian → Settings → Community plugins → enable "Inline Review".
+2. Copy `manifest.json`, `main.js`, and `styles.css` to `<vault>/.obsidian/plugins/redline/`.
+3. Reload Obsidian → Settings → Community plugins → enable "Redline".
 
 ## Usage
 

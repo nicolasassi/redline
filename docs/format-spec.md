@@ -1,8 +1,8 @@
-# Inline Review Sidecar Format Specification
+# Redline Sidecar Format Specification
 
 Version 1.
 
-This document specifies the on-disk format used by the Inline Review plugin. Any tool that produces or consumes review comments — editors, scripts, automation — should follow this contract.
+This document specifies the on-disk format used by the Redline plugin. Any tool that produces or consumes review comments — editors, scripts, automation — should follow this contract.
 
 ## File location and naming
 
