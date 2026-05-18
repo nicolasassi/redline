@@ -42,7 +42,10 @@ export class ReviewSidebar extends ItemView {
 
   async refresh() {
     const active = this.app.workspace.getActiveViewOfType(MarkdownView);
-    this.currentDocPath = active?.file?.path ?? null;
+    const path = active?.file?.path;
+    if (path && !path.endsWith(".review.md")) {
+      this.currentDocPath = path;
+    }
     this.render();
   }
 
@@ -69,7 +72,7 @@ export class ReviewSidebar extends ItemView {
 
     const header = root.createDiv({ cls: "review-header" });
     header.createEl("h4", {
-      text: `Review · ${counts.open} open · ${counts.resolved} resolved · ${counts.stale} stale`,
+      text: `Redline · ${counts.open} open · ${counts.resolved} resolved · ${counts.stale} stale`,
     });
 
     const filterBar = root.createDiv({ cls: "review-filters" });
@@ -136,13 +139,23 @@ export class ReviewSidebar extends ItemView {
       new Notice(`Anchor ${c.anchor} not found`);
       return;
     }
-    const active = this.app.workspace.getActiveViewOfType(MarkdownView);
-    if (active?.editor) {
-      active.editor.setCursor({ line: lineIndex, ch: 0 });
-      active.editor.scrollIntoView(
+    const leaf = this.app.workspace
+      .getLeavesOfType("markdown")
+      .find((l) => (l.view as MarkdownView).file?.path === this.currentDocPath);
+    if (!leaf) {
+      new Notice("Source document is not open");
+      return;
+    }
+    this.app.workspace.setActiveLeaf(leaf, { focus: true });
+    window.requestAnimationFrame(() => {
+      const view = leaf.view as MarkdownView;
+      if (!view.editor) return;
+      view.editor.setCursor({ line: lineIndex, ch: 0 });
+      view.editor.scrollIntoView(
         { from: { line: lineIndex, ch: 0 }, to: { line: lineIndex, ch: 0 } },
         true
       );
-    }
+      view.editor.focus();
+    });
   }
 }

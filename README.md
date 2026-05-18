@@ -11,7 +11,7 @@ Obsidian is great for writing long documents collaboratively (with yourself, you
 3. Hand the document plus its `.review.md` sidecar to any tool — a human, a script, an AI assistant — that can act on the comments.
 4. The tool resolves each comment by editing the source doc and flipping the comment status in the sidecar.
 
-The plugin is intentionally protocol-based: it stores comments in a documented [markdown sidecar format](docs/format-spec.md) and does not bind to any specific downstream tool. Anything that can read markdown can participate.
+The plugin is intentionally protocol-based: it stores comments in a documented markdown sidecar format and does not bind to any specific downstream tool. Anything that can read markdown can participate.
 
 ## Features
 
@@ -64,7 +64,7 @@ In the sidebar, click **Resolve** on the comment card. The status flips to `reso
 
 ### Hand off to a downstream tool
 
-The `<doc>.review.md` sidecar is a plain, documented markdown file. Any tool you trust to edit your documents — a script, an AI assistant, a coworker — can read the open comments and apply the requested changes. See the [format spec](docs/format-spec.md) for the exact contract.
+The `<doc>.review.md` sidecar is a plain, documented markdown file. Any tool you trust to edit your documents — a script, an AI assistant, a coworker — can read the open comments and apply the requested changes.
 
 ## Settings
 
@@ -78,10 +78,6 @@ The `<doc>.review.md` sidecar is a plain, documented markdown file. Any tool you
 | Review: Add comment at cursor | Create a new comment anchored to the current block. |
 | Review: Toggle sidebar | Show/hide the review sidebar on the right. |
 | Review: Jump to next open comment | Move the cursor to the next unresolved comment in the active doc. |
-
-## Sidecar format
-
-See [docs/format-spec.md](docs/format-spec.md) for the full file format contract, including the three comment statuses (`open` / `resolved` / `stale`), the seven anchor target types, and rules for parsers.
 
 ## Development
 

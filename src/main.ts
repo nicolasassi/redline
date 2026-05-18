@@ -47,7 +47,7 @@ export default class ReviewPlugin extends Plugin {
       },
     });
 
-    this.addRibbonIcon("messages-square", "Review sidebar", () => this.toggleSidebar());
+    this.addRibbonIcon("messages-square", "Redline sidebar", () => this.toggleSidebar());
     this.addSettingTab(new ReviewSettingTab(this.app, this));
 
     this.registerMarkdownPostProcessor((el, ctx) => {
@@ -76,7 +76,7 @@ export default class ReviewPlugin extends Plugin {
       })
     );
 
-    console.log("obsidian-review: loaded");
+    console.log("redline: loaded");
   }
 
   async onunload() {
