@@ -1,6 +1,7 @@
 import { ItemView, WorkspaceLeaf, MarkdownView, TFile, Notice } from "obsidian";
 import { CommentStore } from "../comment-store";
 import { ReviewComment } from "../sidecar";
+import { AddCommentModal } from "./add-comment-modal";
 
 export const REVIEW_VIEW_TYPE = "obsidian-review-sidebar";
 
@@ -110,6 +111,9 @@ export class ReviewSidebar extends ItemView {
     const jump = actions.createEl("button", { text: "Jump" });
     jump.onclick = () => this.jumpToAnchor(c);
 
+    const edit = actions.createEl("button", { text: "Edit" });
+    edit.onclick = () => this.editComment(c);
+
     const toggle = actions.createEl("button", {
       text: c.status === "open" ? "Resolve" : "Reopen",
     });
@@ -126,6 +130,20 @@ export class ReviewSidebar extends ItemView {
       await this.store.deleteComment(this.currentDocPath, c.id);
       this.render();
     };
+  }
+
+  private editComment(c: ReviewComment) {
+    if (!this.currentDocPath) return;
+    const docPath = this.currentDocPath;
+    new AddCommentModal(
+      this.app,
+      async (body) => {
+        if (body === c.body) return;
+        await this.store.updateCommentBody(docPath, c.id, body);
+        this.render();
+      },
+      { title: `Edit comment ${c.id}`, initialBody: c.body, submitLabel: "Update" }
+    ).open();
   }
 
   private async jumpToAnchor(c: ReviewComment) {

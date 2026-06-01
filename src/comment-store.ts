@@ -121,6 +121,19 @@ export class CommentStore {
     await this.writeSidecar(docPath, sidecar);
   }
 
+  async updateCommentBody(
+    docPath: string,
+    commentId: string,
+    body: string
+  ): Promise<void> {
+    const sidecar = await this.readSidecar(docPath);
+    if (!sidecar) throw new Error("no sidecar");
+    const comment = sidecar.comments.find((c) => c.id === commentId);
+    if (!comment) throw new Error(`comment not found: ${commentId}`);
+    comment.body = body;
+    await this.writeSidecar(docPath, sidecar);
+  }
+
   async deleteComment(docPath: string, commentId: string): Promise<void> {
     const sidecar = await this.readSidecar(docPath);
     if (!sidecar) return;
