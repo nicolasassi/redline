@@ -15,12 +15,18 @@ The plugin is intentionally protocol-based: it stores comments in a documented m
 
 ## Features
 
-- **Right-click → Add review comment** on any paragraph, heading, list item, image, code block, callout, or table.
+- **Add review comment** on any paragraph, heading, list item, image, code block, callout, or table.
 - **Block-reference anchoring**: comments are pinned to Obsidian's native `^blockref` markers, so they survive document reflow.
-- **Gutter markers** in the editor: amber for `open`, gray for `resolved`, red for `stale` (the anchored block no longer exists).
-- **Review sidebar** listing all comments for the active document, with filters (all / open / resolved / stale), jump-to-anchor, toggle status, and delete.
+- **Markdown rendered comment bodies** in both the sidebar cards and the editor hover tooltip — bold, links, lists, code spans, inline images all just work.
+- **Edit existing comments** from the sidebar; **Cmd/Ctrl+Enter** saves the modal.
+- **Hover anywhere in the anchored block** to see the comment as a tooltip (paragraph-wide, code-block-wide, table-wide, callout-wide).
+- **Per-comment due dates** with an **overdue** indicator (red border, dot, and an "overdue" sidebar filter).
+- **Gutter markers** in the editor: amber for `open`, gray for `resolved`, red for `stale` or `overdue`.
+- **Review sidebar** for the active document with filters (all / open / overdue / resolved / stale), jump-to-anchor, edit, toggle status, reattach, and delete.
+- **Cross-doc dashboard** lists every `.review.md` in the vault with per-doc open / stale / overdue counts, sortable columns, and click-through to the source doc.
+- **Stale anchor detection + Reattach** — if the anchor block is edited away, the comment is flagged stale; saved anchor context lets you reattach with one click.
+- **Source-doc rename / move / delete are mirrored** on the sidecar so reviews follow the document around (toggle in settings).
 - **Jump to next open comment** — keyboard-friendly navigation through unresolved items.
-- **Stale anchor detection** runs when you reopen a document — if you've edited away an anchored block, the related comment is automatically flagged.
 - **Per-document or central-folder sidecar storage** (settings).
 
 ## Installation
@@ -46,8 +52,8 @@ Settings → Community plugins → Browse → search "Redline" → Install → E
 ### Add a comment
 
 1. Place your cursor on a paragraph (or select within it), or click an image/code-block/heading/etc.
-2. Open the command palette (`Cmd/Ctrl + P`) → **Review: Add comment at cursor**.
-3. Type your comment, save.
+2. Open the command palette (`Cmd/Ctrl + P`) → **Redline: Add comment at cursor**.
+3. Type your comment (markdown is supported). Optionally pick a due date. Press **Cmd/Ctrl+Enter** to save.
 
 The plugin will:
 - Inject a `^blockref` anchor on the target block if it doesn't have one (reusing an existing anchor when present).
@@ -56,11 +62,18 @@ The plugin will:
 
 ### Open the review sidebar
 
-Click the speech-bubble ribbon icon on the left, or run **Review: Toggle sidebar**.
+Click the speech-bubble ribbon icon on the left, or run **Redline: Toggle sidebar**.
 
-### Resolve a comment
+### Open the cross-doc dashboard
 
-In the sidebar, click **Resolve** on the comment card. The status flips to `resolved` and the gutter dot turns gray. Click **Reopen** to flip it back.
+Click the layout-dashboard ribbon icon, or run **Redline: Open dashboard**. You get a sortable table of every doc that has open / stale / overdue comments — click a row to jump into that doc.
+
+### Resolve, edit, reattach a comment
+
+In the sidebar:
+- **Resolve / Reopen** — flips status between `open` and `resolved`.
+- **Edit** — open the modal again to update the body or due date.
+- **Reattach** — only shown for stale comments; uses the saved anchor context to find the original line and re-injects a fresh anchor.
 
 ### Hand off to a downstream tool
 
@@ -70,14 +83,16 @@ The `<doc>.review.md` sidecar is a plain, documented markdown file. Any tool you
 
 - **Sidecar location** — alongside the source doc (default) or in a central `_reviews/` folder.
 - **Central folder name** — vault-relative folder used when central layout is selected.
+- **Mirror source-doc lifecycle** — when on (default), renaming, moving, or deleting a source doc also renames/moves/deletes its sidecar.
 
 ## Commands
 
 | Command | What it does |
 |---|---|
-| Review: Add comment at cursor | Create a new comment anchored to the current block. |
-| Review: Toggle sidebar | Show/hide the review sidebar on the right. |
-| Review: Jump to next open comment | Move the cursor to the next unresolved comment in the active doc. |
+| Redline: Add comment at cursor | Create a new comment anchored to the current block. |
+| Redline: Toggle sidebar | Show/hide the review sidebar on the right. |
+| Redline: Open dashboard | Open the cross-doc dashboard tab. |
+| Redline: Jump to next open comment | Move the cursor to the next unresolved comment in the active doc. |
 
 ## Development
 
