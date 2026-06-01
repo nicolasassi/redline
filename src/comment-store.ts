@@ -94,6 +94,7 @@ export class CommentStore {
       return n > max ? n : max;
     }, 0);
     const nextId = `c${highest + 1}`;
+    const anchorContext = docText.split("\n")[lineNumber]?.trimEnd();
     const comment: ReviewComment = {
       id: nextId,
       status: "open",
@@ -101,6 +102,7 @@ export class CommentStore {
       target,
       created: new Date().toISOString(),
       body,
+      anchorContext: anchorContext || undefined,
     };
     sidecar.comments.push(comment);
     await this.writeSidecar(docPath, sidecar);
@@ -201,6 +203,33 @@ export class CommentStore {
       delete comment.previousStatus;
     }
     await this.writeSidecar(docPath, sidecar);
+  }
+
+  async reattachComment(docPath: string, commentId: string): Promise<boolean> {
+    const sidecar = await this.readSidecar(docPath);
+    if (!sidecar) throw new Error("no sidecar");
+    const comment = sidecar.comments.find((c) => c.id === commentId);
+    if (!comment) throw new Error(`comment not found: ${commentId}`);
+    if (comment.status !== "stale") return false;
+    if (!comment.anchorContext) return false;
+
+    const docFile = this.app.vault.getAbstractFileByPath(docPath);
+    if (!(docFile instanceof TFile)) return false;
+    const text = await this.app.vault.read(docFile);
+    const lines = text.split("\n");
+    const needle = comment.anchorContext.trim();
+    const lineIndex = lines.findIndex((l) => l.trim() === needle);
+    if (lineIndex < 0) return false;
+
+    const anchorId = comment.anchor.replace(/^\^/, "");
+    const { text: newText } = injectBlockId(text, lineIndex, comment.target, anchorId);
+    if (newText !== text) {
+      await this.app.vault.modify(docFile, newText);
+    }
+    comment.status = "open";
+    delete comment.note;
+    await this.writeSidecar(docPath, sidecar);
+    return true;
   }
 
   async markStaleAnchors(docPath: string): Promise<number> {

@@ -116,6 +116,24 @@ export class ReviewSidebar extends ItemView {
     const edit = actions.createEl("button", { text: "Edit" });
     edit.onclick = () => this.editComment(c);
 
+    if (c.status === "stale" && c.anchorContext) {
+      const reattach = actions.createEl("button", { text: "Reattach" });
+      reattach.onclick = async () => {
+        if (!this.currentDocPath) return;
+        try {
+          const ok = await this.store.reattachComment(this.currentDocPath, c.id);
+          if (ok) {
+            new Notice(`Reattached ${c.id}`);
+          } else {
+            new Notice(`Could not find anchor context for ${c.id}`);
+          }
+        } catch (e) {
+          new Notice(`Reattach failed: ${(e as Error).message}`);
+        }
+        this.render();
+      };
+    }
+
     const toggle = actions.createEl("button", {
       text: c.status === "open" ? "Resolve" : "Reopen",
     });
