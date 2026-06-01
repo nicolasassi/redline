@@ -4,11 +4,13 @@ import type ReviewPlugin from "./main";
 export interface ReviewSettings {
   sidecarLocation: "alongside" | "central";
   centralFolder: string;
+  mirrorSourceLifecycle: boolean;
 }
 
 export const DEFAULT_SETTINGS: ReviewSettings = {
   sidecarLocation: "alongside",
   centralFolder: "_reviews",
+  mirrorSourceLifecycle: true,
 };
 
 export class ReviewSettingTab extends PluginSettingTab {
@@ -43,6 +45,20 @@ export class ReviewSettingTab extends PluginSettingTab {
           .setValue(this.plugin.settings.centralFolder)
           .onChange(async (value) => {
             this.plugin.settings.centralFolder = value || "_reviews";
+            await this.plugin.saveSettings();
+          })
+      );
+
+    new Setting(containerEl)
+      .setName("Mirror source-doc moves and deletes")
+      .setDesc(
+        "When a source doc is renamed, moved, or deleted, apply the same action to its sidecar."
+      )
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.mirrorSourceLifecycle)
+          .onChange(async (value) => {
+            this.plugin.settings.mirrorSourceLifecycle = value;
             await this.plugin.saveSettings();
           })
       );

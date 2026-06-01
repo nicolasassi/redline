@@ -1,4 +1,4 @@
-import { Plugin, WorkspaceLeaf, MarkdownView, TFile, Notice } from "obsidian";
+import { Plugin, WorkspaceLeaf, MarkdownView, TAbstractFile, TFile, Notice } from "obsidian";
 import { EditorView } from "@codemirror/view";
 import { CommentStore, SIDECAR_SUFFIX } from "./comment-store";
 import { registerAddCommentCommand } from "./commands";
@@ -75,6 +75,17 @@ export default class ReviewPlugin extends Plugin {
         this.refreshGutter();
       })
     );
+    this.registerEvent(
+      this.app.vault.on("rename", async (file, oldPath) => {
+        await this.mirrorSourceRename(file, oldPath);
+      })
+    );
+    this.registerEvent(
+      this.app.vault.on("delete", async (file) => {
+        await this.mirrorSourceDelete(file);
+      })
+    );
+
     console.log("redline: loaded");
   }
 
@@ -161,6 +172,60 @@ export default class ReviewPlugin extends Plugin {
         }
       };
     });
+  }
+
+  private async mirrorSourceRename(file: TAbstractFile, oldPath: string) {
+    if (!this.settings.mirrorSourceLifecycle) return;
+    if (!(file instanceof TFile)) return;
+    if (oldPath.endsWith(SIDECAR_SUFFIX)) return;
+    if (file.path === oldPath) return;
+
+    const oldSidecarPath = this.store.sidecarPathFor(oldPath);
+    const newSidecarPath = this.store.sidecarPathFor(file.path);
+    if (oldSidecarPath === newSidecarPath) return;
+
+    const sidecarFile = this.app.vault.getAbstractFileByPath(oldSidecarPath);
+    if (!(sidecarFile instanceof TFile)) return;
+
+    try {
+      await this.app.fileManager.renameFile(sidecarFile, newSidecarPath);
+    } catch (err) {
+      new Notice(`Redline: failed to rename sidecar — ${(err as Error).message}`);
+      return;
+    }
+
+    try {
+      const sidecar = await this.store.readSidecar(file.path);
+      if (sidecar && sidecar.reviewFor !== file.path) {
+        sidecar.reviewFor = file.path;
+        await this.store.writeSidecar(file.path, sidecar);
+      }
+    } catch (err) {
+      new Notice(
+        `Redline: renamed sidecar but failed to update reviewFor — ${(err as Error).message}`
+      );
+    }
+  }
+
+  private async mirrorSourceDelete(file: TAbstractFile) {
+    if (!this.settings.mirrorSourceLifecycle) return;
+    if (!(file instanceof TFile)) return;
+    if (file.path.endsWith(SIDECAR_SUFFIX)) return;
+
+    const sidecarPath = this.store.sidecarPathFor(file.path);
+    const sidecarFile = this.app.vault.getAbstractFileByPath(sidecarPath);
+    if (!(sidecarFile instanceof TFile)) return;
+
+    try {
+      const fm = this.app.fileManager as { trashFile?: (f: TAbstractFile) => Promise<void> };
+      if (typeof fm.trashFile === "function") {
+        await fm.trashFile(sidecarFile);
+      } else {
+        await this.app.vault.trash(sidecarFile, true);
+      }
+    } catch (err) {
+      new Notice(`Redline: failed to remove sidecar — ${(err as Error).message}`);
+    }
   }
 
   private async refreshGutter() {
