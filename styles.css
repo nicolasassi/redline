@@ -9,7 +9,10 @@
 .review-card-header { display: flex; justify-content: space-between; font-size: 0.85em; margin-bottom: 4px; }
 .review-card-id { font-weight: bold; }
 .review-card-target { font-style: italic; color: var(--text-muted); }
-.review-card-body { margin: 4px 0; white-space: pre-wrap; }
+.review-card-body { margin: 4px 0; }
+.review-card-body > :first-child { margin-top: 0; }
+.review-card-body > :last-child { margin-bottom: 0; }
+.review-card-body p { margin: 4px 0; }
 .review-card-resolution, .review-card-note { font-size: 0.85em; color: var(--text-muted); margin: 4px 0; }
 .review-card-actions { display: flex; gap: 4px; margin-top: 6px; }
 .review-card-actions button { padding: 2px 8px; cursor: pointer; }
@@ -35,7 +38,10 @@
 .review-hover-id { font-weight: bold; }
 .review-hover-status { color: var(--text-muted); text-transform: uppercase; font-size: 0.75em; }
 .review-hover-meta { color: var(--text-muted); font-size: 0.8em; margin-bottom: 6px; }
-.review-hover-body { white-space: pre-wrap; }
+.review-hover-body { line-height: 1.4; }
+.review-hover-body > :first-child { margin-top: 0; }
+.review-hover-body > :last-child { margin-bottom: 0; }
+.review-hover-body p { margin: 4px 0; }
 .review-hover-resolution, .review-hover-note { color: var(--text-muted); font-size: 0.85em; margin-top: 6px; }
 .review-hover-actions { display: flex; justify-content: flex-end; margin-top: 8px; }
 .review-hover-actions button { padding: 2px 8px; cursor: pointer; font-size: 0.85em; }

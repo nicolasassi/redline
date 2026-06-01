@@ -1,4 +1,4 @@
-import { ItemView, WorkspaceLeaf, MarkdownView, TFile, Notice } from "obsidian";
+import { ItemView, WorkspaceLeaf, MarkdownView, MarkdownRenderer, TFile, Notice } from "obsidian";
 import { CommentStore } from "../comment-store";
 import { ReviewComment } from "../sidecar";
 import { AddCommentModal } from "./add-comment-modal";
@@ -98,7 +98,9 @@ export class ReviewSidebar extends ItemView {
     header.createEl("span", { text: `${c.id} · ${c.status}`, cls: "review-card-id" });
     header.createEl("span", { text: c.target, cls: "review-card-target" });
 
-    card.createEl("p", { text: c.body, cls: "review-card-body" });
+    const body = card.createDiv({ cls: "review-card-body" });
+    const sourcePath = this.currentDocPath ?? "";
+    void MarkdownRenderer.render(this.app, c.body || "*(no body)*", body, sourcePath, this);
 
     if (c.resolution) {
       card.createEl("p", { text: `Resolution: ${c.resolution}`, cls: "review-card-resolution" });

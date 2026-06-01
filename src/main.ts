@@ -75,7 +75,6 @@ export default class ReviewPlugin extends Plugin {
         this.refreshGutter();
       })
     );
-
     console.log("redline: loaded");
   }
 
@@ -202,7 +201,7 @@ export default class ReviewPlugin extends Plugin {
       cm.dispatch({
         effects: [
           setGutterEntries.of(entries),
-          setHoverState.of({ comments: byAnchor, docPath, onArchive }),
+          setHoverState.of({ comments: byAnchor, docPath, onArchive, app: this.app }),
         ],
       });
     }

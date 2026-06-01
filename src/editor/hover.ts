@@ -1,16 +1,22 @@
 import { hoverTooltip, Tooltip, EditorView } from "@codemirror/view";
 import { StateField, StateEffect } from "@codemirror/state";
+import { App, Component, MarkdownRenderer } from "obsidian";
 import { ReviewComment } from "../sidecar";
-
-const BLOCK_ID_RE = /\^([a-z0-9]{6})(?![a-z0-9])/g;
+import { blockLineRange } from "./block-range";
 
 export interface HoverState {
   comments: Map<string, ReviewComment>;
   docPath: string | null;
   onArchive: ((commentId: string) => void) | null;
+  app: App | null;
 }
 
-const EMPTY_STATE: HoverState = { comments: new Map(), docPath: null, onArchive: null };
+const EMPTY_STATE: HoverState = {
+  comments: new Map(),
+  docPath: null,
+  onArchive: null,
+  app: null,
+};
 
 export const setHoverState = StateEffect.define<HoverState>();
 
@@ -26,23 +32,36 @@ const hoverStateField = StateField.define<HoverState>({
   },
 });
 
-function blockIdAt(view: EditorView, pos: number): { id: string; from: number; to: number } | null {
-  const line = view.state.doc.lineAt(pos);
-  const text = line.text;
-  const offset = pos - line.from;
-  BLOCK_ID_RE.lastIndex = 0;
-  let match: RegExpExecArray | null;
-  while ((match = BLOCK_ID_RE.exec(text)) !== null) {
-    const start = match.index;
-    const end = start + match[0].length;
-    if (offset >= start && offset <= end) {
-      return { id: match[1], from: line.from + start, to: line.from + end };
-    }
-  }
-  return null;
+interface AnchoredRange {
+  comment: ReviewComment;
+  from: number;
+  to: number;
 }
 
-function renderTooltip(comment: ReviewComment, state: HoverState): HTMLElement {
+function computeAnchorRanges(view: EditorView, comments: Map<string, ReviewComment>): AnchoredRange[] {
+  const doc = view.state.doc;
+  const lines = doc.toString().split("\n");
+  const result: AnchoredRange[] = [];
+
+  for (const c of comments.values()) {
+    const anchorId = c.anchor.replace(/^\^/, "");
+    if (!anchorId) continue;
+    const re = new RegExp(`\\^${anchorId}(?![a-z0-9])`);
+    const anchorLineIdx = lines.findIndex((l) => re.test(l));
+    if (anchorLineIdx < 0) continue;
+    const [startLine, endLine] = blockLineRange(lines, anchorLineIdx, c.target);
+    const fromPos = doc.line(startLine + 1).from;
+    const toPos = doc.line(endLine + 1).to;
+    result.push({ comment: c, from: fromPos, to: toPos });
+  }
+  return result;
+}
+
+function renderTooltipDom(
+  comment: ReviewComment,
+  state: HoverState,
+  component: Component
+): HTMLElement {
   const dom = document.createElement("div");
   dom.addClass("review-hover-tooltip");
   dom.addClass(`review-hover-${comment.status}`);
@@ -55,7 +74,12 @@ function renderTooltip(comment: ReviewComment, state: HoverState): HTMLElement {
   meta.setText(`${comment.target} · ${comment.created.slice(0, 10)}`);
 
   const body = dom.createDiv({ cls: "review-hover-body" });
-  body.setText(comment.body || "(no body)");
+  const markdown = comment.body || "*(no body)*";
+  if (state.app && state.docPath) {
+    void MarkdownRenderer.render(state.app, markdown, body, state.docPath, component);
+  } else {
+    body.setText(comment.body || "(no body)");
+  }
 
   if (comment.resolution) {
     const res = dom.createDiv({ cls: "review-hover-resolution" });
@@ -85,15 +109,22 @@ function renderTooltip(comment: ReviewComment, state: HoverState): HTMLElement {
 const reviewHoverTooltip = hoverTooltip((view, pos): Tooltip | null => {
   const state = view.state.field(hoverStateField, false);
   if (!state || state.comments.size === 0) return null;
-  const hit = blockIdAt(view, pos);
+  const ranges = computeAnchorRanges(view, state.comments);
+  const hit = ranges.find((r) => pos >= r.from && pos <= r.to);
   if (!hit) return null;
-  const comment = state.comments.get(hit.id);
-  if (!comment) return null;
   return {
     pos: hit.from,
     end: hit.to,
     above: true,
-    create: () => ({ dom: renderTooltip(comment, state) }),
+    create: () => {
+      const component = new Component();
+      component.load();
+      const dom = renderTooltipDom(hit.comment, state, component);
+      return {
+        dom,
+        destroy: () => component.unload(),
+      };
+    },
   };
 });
 
