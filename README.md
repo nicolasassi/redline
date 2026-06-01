@@ -4,7 +4,7 @@ Add PR-style review comments to any document in your Obsidian vault. Anchor comm
 
 ## Demo
 
-<video src="https://raw.githubusercontent.com/nicolasassi/redline/main/docs/demos/add-comment.mp4" controls></video>
+https://github.com/user-attachments/assets/854b96fa-0d00-4e85-a570-d34fc17e30f2
 
 ## Why
 
