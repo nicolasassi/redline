@@ -6,8 +6,6 @@ Add PR-style review comments to any document in your Obsidian vault. Anchor comm
 
 <video src="https://raw.githubusercontent.com/nicolasassi/redline/main/docs/demos/add-comment.mov" controls></video>
 
-*If the embed doesn't play, [download the demo](docs/demos/add-comment.mov).*
-
 ## Why
 
 Obsidian is great for writing long documents collaboratively (with yourself, your future self, or external tools), but it has no built-in equivalent to a GitHub pull-request review. This plugin adds that workflow:
