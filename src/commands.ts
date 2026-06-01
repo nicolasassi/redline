@@ -38,9 +38,9 @@ export function registerAddCommentCommand(
         return;
       }
       const target = inferTarget(editor, cursorLine);
-      new AddCommentModal(app, async (body) => {
+      new AddCommentModal(app, async ({ body, due }) => {
         try {
-          const comment = await store.addComment(file.path, cursorLine, target, body);
+          const comment = await store.addComment(file.path, cursorLine, target, body, due);
           new Notice(`Comment added (${comment.id})`);
         } catch (e) {
           new Notice(`Failed to add comment: ${(e as Error).message}`);

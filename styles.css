@@ -6,6 +6,9 @@
 .review-card-open { border-left: 3px solid var(--color-yellow); }
 .review-card-resolved { border-left: 3px solid var(--color-base-50); opacity: 0.7; }
 .review-card-stale { border-left: 3px solid var(--color-red); }
+.review-card-overdue { border-left: 3px solid var(--color-red); }
+.review-card-due { font-size: 0.8em; color: var(--text-muted); margin: 2px 0 4px 0; }
+.review-card-due-overdue { color: var(--color-red); font-weight: 600; }
 .review-card-header { display: flex; justify-content: space-between; font-size: 0.85em; margin-bottom: 4px; }
 .review-card-id { font-weight: bold; }
 .review-card-target { font-style: italic; color: var(--text-muted); }
@@ -21,6 +24,7 @@
 .review-gutter-open { background: var(--color-yellow); }
 .review-gutter-resolved { background: var(--color-base-40); }
 .review-gutter-stale { background: var(--color-red); }
+.review-gutter-overdue { background: var(--color-red); }
 
 .review-hover-tooltip {
   max-width: 320px;

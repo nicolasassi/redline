@@ -126,6 +126,42 @@ updated: 2026-05-18T10:00:00Z
 > Body of the archived comment.
 `;
 
+const DUE_SAMPLE = `---
+review_for: foo.md
+format_version: 1
+updated: 2026-05-18T10:00:00Z
+---
+
+# Review: foo.md
+
+> [!review-comment]+ c4 · open
+> anchor: ^abc123
+> target: paragraph
+> created: 2026-05-15T09:14:00Z
+> due: 2026-06-15
+>
+> Comment with a due date.
+`;
+
+describe("due-date metadata", () => {
+  it("parses the due field", () => {
+    const result = parseSidecar(DUE_SAMPLE);
+    expect(result.comments[0].due).toBe("2026-06-15");
+  });
+
+  it("round-trips comments with a due date", () => {
+    const original = parseSidecar(DUE_SAMPLE);
+    const reparsed = parseSidecar(serializeSidecar(original));
+    expect(reparsed).toEqual(original);
+  });
+
+  it("omits the due line when due is unset", () => {
+    const sidecar = parseSidecar(SAMPLE);
+    const text = serializeSidecar(sidecar);
+    expect(text).not.toMatch(/> due:/);
+  });
+});
+
 describe("archived comments", () => {
   it("parses previous_status and anchor_context", () => {
     const result = parseSidecar(ARCHIVED_SAMPLE);

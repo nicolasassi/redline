@@ -2,6 +2,7 @@ import { hoverTooltip, Tooltip, EditorView } from "@codemirror/view";
 import { StateField, StateEffect } from "@codemirror/state";
 import { App, Component, MarkdownRenderer } from "obsidian";
 import { ReviewComment } from "../sidecar";
+import { isOverdue, todayIso } from "../due-date";
 import { blockLineRange } from "./block-range";
 
 export interface HoverState {
@@ -72,6 +73,13 @@ function renderTooltipDom(
 
   const meta = dom.createDiv({ cls: "review-hover-meta" });
   meta.setText(`${comment.target} · ${comment.created.slice(0, 10)}`);
+
+  if (comment.due) {
+    const overdue = isOverdue(comment, todayIso());
+    const dueEl = dom.createDiv({ cls: "review-hover-due" });
+    dueEl.setText(`Due ${comment.due}${overdue ? " · overdue" : ""}`);
+    if (overdue) dueEl.addClass("review-hover-due-overdue");
+  }
 
   const body = dom.createDiv({ cls: "review-hover-body" });
   const markdown = comment.body || "*(no body)*";

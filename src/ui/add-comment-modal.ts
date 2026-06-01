@@ -1,27 +1,39 @@
 import { App, Modal, Setting } from "obsidian";
+import { isValidDueDate } from "../due-date";
 
 export interface CommentBodyModalOptions {
   title?: string;
   initialBody?: string;
+  initialDue?: string;
   submitLabel?: string;
+}
+
+export interface CommentBodyModalResult {
+  body: string;
+  due?: string;
 }
 
 export class AddCommentModal extends Modal {
   private body: string;
-  private options: Required<CommentBodyModalOptions>;
+  private due: string;
+  private options: Required<Omit<CommentBodyModalOptions, "initialDue">> & {
+    initialDue: string;
+  };
 
   constructor(
     app: App,
-    private onSubmit: (body: string) => void,
+    private onSubmit: (result: CommentBodyModalResult) => void,
     options: CommentBodyModalOptions = {}
   ) {
     super(app);
     this.options = {
       title: options.title ?? "Add review comment",
       initialBody: options.initialBody ?? "",
+      initialDue: options.initialDue ?? "",
       submitLabel: options.submitLabel ?? "Save",
     };
     this.body = this.options.initialBody;
+    this.due = this.options.initialDue;
   }
 
   onOpen() {
@@ -48,6 +60,15 @@ export class AddCommentModal extends Modal {
     });
 
     new Setting(contentEl)
+      .setName("Due date")
+      .setDesc("Optional. Cards past this date are highlighted as overdue.")
+      .addText((text) => {
+        text.inputEl.type = "date";
+        text.setValue(this.due);
+        text.onChange((v) => (this.due = v));
+      });
+
+    new Setting(contentEl)
       .addButton((btn) =>
         btn
           .setButtonText(this.options.submitLabel)
@@ -60,8 +81,9 @@ export class AddCommentModal extends Modal {
   private submit() {
     const body = this.body.trim();
     if (body === "") return;
+    const due = this.due.trim();
     this.close();
-    this.onSubmit(body);
+    this.onSubmit({ body, due: isValidDueDate(due) ? due : undefined });
   }
 
   onClose() {

@@ -1,11 +1,12 @@
 import { ItemView, WorkspaceLeaf, MarkdownView, MarkdownRenderer, TFile, Notice } from "obsidian";
 import { CommentStore } from "../comment-store";
 import { ReviewComment } from "../sidecar";
+import { isOverdue, todayIso } from "../due-date";
 import { AddCommentModal } from "./add-comment-modal";
 
 export const REVIEW_VIEW_TYPE = "obsidian-review-sidebar";
 
-type Filter = "all" | "open" | "resolved" | "stale";
+type Filter = "all" | "open" | "resolved" | "stale" | "overdue";
 
 export class ReviewSidebar extends ItemView {
   private filter: Filter = "open";
@@ -64,20 +65,24 @@ export class ReviewSidebar extends ItemView {
     const sidecar = await this.store.readSidecar(this.currentDocPath);
     if (gen !== this.renderGen) return;
     root.empty();
+    const today = todayIso();
     const all = (sidecar?.comments ?? []).filter((c) => c.status !== "archived");
     const counts = {
       open: all.filter((c) => c.status === "open").length,
       resolved: all.filter((c) => c.status === "resolved").length,
       stale: all.filter((c) => c.status === "stale").length,
+      overdue: all.filter((c) => isOverdue(c, today)).length,
     };
 
     const header = root.createDiv({ cls: "review-header" });
     header.createEl("h4", {
-      text: `Redline · ${counts.open} open · ${counts.resolved} resolved · ${counts.stale} stale`,
+      text:
+        `Redline · ${counts.open} open · ${counts.overdue} overdue · ` +
+        `${counts.resolved} resolved · ${counts.stale} stale`,
     });
 
     const filterBar = root.createDiv({ cls: "review-filters" });
-    for (const f of ["all", "open", "resolved", "stale"] as Filter[]) {
+    for (const f of ["all", "open", "overdue", "resolved", "stale"] as Filter[]) {
       const btn = filterBar.createEl("button", { text: f });
       if (f === this.filter) btn.addClass("active");
       btn.onclick = () => {
@@ -86,17 +91,30 @@ export class ReviewSidebar extends ItemView {
       };
     }
 
-    const visible = all.filter((c) => this.filter === "all" || c.status === this.filter);
+    const visible = all.filter((c) => {
+      if (this.filter === "all") return true;
+      if (this.filter === "overdue") return isOverdue(c, today);
+      return c.status === this.filter;
+    });
     for (const c of visible) {
-      this.renderCommentCard(root, c);
+      this.renderCommentCard(root, c, today);
     }
   }
 
-  private renderCommentCard(parent: HTMLElement, c: ReviewComment) {
-    const card = parent.createDiv({ cls: `review-card review-card-${c.status}` });
+  private renderCommentCard(parent: HTMLElement, c: ReviewComment, today: string) {
+    const overdue = isOverdue(c, today);
+    const card = parent.createDiv({
+      cls: `review-card review-card-${c.status}${overdue ? " review-card-overdue" : ""}`,
+    });
     const header = card.createDiv({ cls: "review-card-header" });
     header.createEl("span", { text: `${c.id} · ${c.status}`, cls: "review-card-id" });
     header.createEl("span", { text: c.target, cls: "review-card-target" });
+
+    if (c.due) {
+      const dueEl = card.createDiv({ cls: "review-card-due" });
+      dueEl.setText(`Due ${c.due}${overdue ? " · overdue" : ""}`);
+      if (overdue) dueEl.addClass("review-card-due-overdue");
+    }
 
     const body = card.createDiv({ cls: "review-card-body" });
     const sourcePath = this.currentDocPath ?? "";
@@ -157,12 +175,22 @@ export class ReviewSidebar extends ItemView {
     const docPath = this.currentDocPath;
     new AddCommentModal(
       this.app,
-      async (body) => {
-        if (body === c.body) return;
-        await this.store.updateCommentBody(docPath, c.id, body);
+      async ({ body, due }) => {
+        const bodyChanged = body !== c.body;
+        const dueChanged = (due ?? "") !== (c.due ?? "");
+        if (!bodyChanged && !dueChanged) return;
+        await this.store.updateComment(docPath, c.id, {
+          body: bodyChanged ? body : undefined,
+          due: dueChanged ? due ?? null : undefined,
+        });
         this.render();
       },
-      { title: `Edit comment ${c.id}`, initialBody: c.body, submitLabel: "Update" }
+      {
+        title: `Edit comment ${c.id}`,
+        initialBody: c.body,
+        initialDue: c.due ?? "",
+        submitLabel: "Update",
+      }
     ).open();
   }
 

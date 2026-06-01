@@ -20,6 +20,7 @@ export interface ReviewComment {
   note?: string;
   previousStatus?: CommentStatus;
   anchorContext?: string;
+  due?: string;
   body: string;
 }
 
@@ -92,6 +93,7 @@ export function parseSidecar(text: string): Sidecar {
       note: metadata.note,
       previousStatus: metadata.previous_status as CommentStatus | undefined,
       anchorContext: metadata.anchor_context,
+      due: metadata.due,
       body: bodyLines.join("\n").trimEnd(),
     });
   }
@@ -137,6 +139,7 @@ export function serializeSidecar(sidecar: Sidecar): string {
     if (c.note) lines.push(`> note: ${c.note}`);
     if (c.previousStatus) lines.push(`> previous_status: ${c.previousStatus}`);
     if (c.anchorContext) lines.push(`> anchor_context: ${c.anchorContext}`);
+    if (c.due) lines.push(`> due: ${c.due}`);
     lines.push(">");
     for (const bodyLine of c.body.split("\n")) {
       lines.push(`> ${bodyLine}`);

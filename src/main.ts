@@ -10,6 +10,7 @@ import {
 } from "./editor/gutter";
 import { reviewHoverExtension, setHoverState } from "./editor/hover";
 import { ReviewComment } from "./sidecar";
+import { isOverdue, todayIso } from "./due-date";
 import {
   ReviewSettings,
   DEFAULT_SETTINGS,
@@ -241,11 +242,14 @@ export default class ReviewPlugin extends Plugin {
     const lines = text.split("\n");
     const entries: GutterEntry[] = [];
     const byAnchor = new Map<string, ReviewComment>();
+    const today = todayIso();
     for (const c of sidecar.comments) {
       if (c.status === "archived") continue;
       const idMatch = c.anchor.replace(/^\^/, "");
       const lineIndex = lines.findIndex((l) => l.includes(`^${idMatch}`));
-      if (lineIndex >= 0) entries.push({ line: lineIndex, status: c.status });
+      if (lineIndex >= 0) {
+        entries.push({ line: lineIndex, status: c.status, overdue: isOverdue(c, today) });
+      }
       if (idMatch) byAnchor.set(idMatch, c);
     }
 

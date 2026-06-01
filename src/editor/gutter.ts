@@ -3,13 +3,14 @@ import { StateField, StateEffect, EditorState, RangeSet } from "@codemirror/stat
 import { CommentStatus } from "../sidecar";
 
 class CommentMarker extends GutterMarker {
-  constructor(private status: CommentStatus) {
+  constructor(private status: CommentStatus, private overdue: boolean) {
     super();
   }
   toDOM() {
     const el = document.createElement("div");
     el.addClass("review-gutter-dot");
     el.addClass(`review-gutter-${this.status}`);
+    if (this.overdue) el.addClass("review-gutter-overdue");
     return el;
   }
 }
@@ -17,6 +18,7 @@ class CommentMarker extends GutterMarker {
 export interface GutterEntry {
   line: number;
   status: CommentStatus;
+  overdue?: boolean;
 }
 
 export const setGutterEntries = StateEffect.define<GutterEntry[]>();
@@ -34,7 +36,7 @@ const gutterField = StateField.define<RangeSet<GutterMarker>>({
           .sort((a, b) => a.line - b.line)
           .map((e) => {
             const linePos = tr.state.doc.line(e.line + 1).from;
-            return new CommentMarker(e.status).range(linePos);
+            return new CommentMarker(e.status, !!e.overdue).range(linePos);
           });
         next = RangeSet.of(markers);
       }

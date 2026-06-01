@@ -64,7 +64,8 @@ export class CommentStore {
     docPath: string,
     lineNumber: number,
     target: CommentTarget,
-    body: string
+    body: string,
+    due?: string
   ): Promise<ReviewComment> {
     const docFile = this.app.vault.getAbstractFileByPath(docPath);
     if (!(docFile instanceof TFile)) throw new Error(`source doc not found: ${docPath}`);
@@ -103,6 +104,7 @@ export class CommentStore {
       created: new Date().toISOString(),
       body,
       anchorContext: anchorContext || undefined,
+      due,
     };
     sidecar.comments.push(comment);
     await this.writeSidecar(docPath, sidecar);
@@ -123,16 +125,23 @@ export class CommentStore {
     await this.writeSidecar(docPath, sidecar);
   }
 
-  async updateCommentBody(
+  async updateComment(
     docPath: string,
     commentId: string,
-    body: string
+    patch: { body?: string; due?: string | null }
   ): Promise<void> {
     const sidecar = await this.readSidecar(docPath);
     if (!sidecar) throw new Error("no sidecar");
     const comment = sidecar.comments.find((c) => c.id === commentId);
     if (!comment) throw new Error(`comment not found: ${commentId}`);
-    comment.body = body;
+    if (patch.body !== undefined) comment.body = patch.body;
+    if (patch.due !== undefined) {
+      if (patch.due === null || patch.due === "") {
+        delete comment.due;
+      } else {
+        comment.due = patch.due;
+      }
+    }
     await this.writeSidecar(docPath, sidecar);
   }
 
