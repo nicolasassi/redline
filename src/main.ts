@@ -3,6 +3,7 @@ import { EditorView } from "@codemirror/view";
 import { CommentStore, SIDECAR_SUFFIX } from "./comment-store";
 import { registerAddCommentCommand } from "./commands";
 import { ReviewSidebar, REVIEW_VIEW_TYPE } from "./ui/review-sidebar";
+import { ReviewDashboard, REVIEW_DASHBOARD_VIEW_TYPE } from "./ui/review-dashboard";
 import {
   reviewGutterExtension,
   setGutterEntries,
@@ -27,6 +28,10 @@ export default class ReviewPlugin extends Plugin {
     registerAddCommentCommand(this.app, this.store, (cmd) => this.addCommand(cmd));
 
     this.registerView(REVIEW_VIEW_TYPE, (leaf: WorkspaceLeaf) => new ReviewSidebar(leaf, this.store));
+    this.registerView(
+      REVIEW_DASHBOARD_VIEW_TYPE,
+      (leaf: WorkspaceLeaf) => new ReviewDashboard(leaf, this.store)
+    );
     this.registerEditorExtension(reviewGutterExtension());
     this.registerEditorExtension(reviewHoverExtension());
 
@@ -34,6 +39,12 @@ export default class ReviewPlugin extends Plugin {
       id: "toggle-sidebar",
       name: "Toggle sidebar",
       callback: () => this.toggleSidebar(),
+    });
+
+    this.addCommand({
+      id: "open-dashboard",
+      name: "Open dashboard",
+      callback: () => this.openDashboard(),
     });
 
     this.addCommand({
@@ -49,6 +60,7 @@ export default class ReviewPlugin extends Plugin {
     });
 
     this.addRibbonIcon("messages-square", "Redline sidebar", () => this.toggleSidebar());
+    this.addRibbonIcon("layout-dashboard", "Redline dashboard", () => this.openDashboard());
     this.addSettingTab(new ReviewSettingTab(this.app, this));
 
     this.registerMarkdownPostProcessor((el, ctx) => {
@@ -92,6 +104,7 @@ export default class ReviewPlugin extends Plugin {
 
   async onunload() {
     this.app.workspace.detachLeavesOfType(REVIEW_VIEW_TYPE);
+    this.app.workspace.detachLeavesOfType(REVIEW_DASHBOARD_VIEW_TYPE);
   }
 
   async loadSettings() {
@@ -110,6 +123,18 @@ export default class ReviewPlugin extends Plugin {
     }
     const leaf = this.app.workspace.getRightLeaf(false);
     await leaf.setViewState({ type: REVIEW_VIEW_TYPE, active: true });
+    this.app.workspace.revealLeaf(leaf);
+  }
+
+  private async openDashboard() {
+    const existing = this.app.workspace.getLeavesOfType(REVIEW_DASHBOARD_VIEW_TYPE);
+    if (existing.length) {
+      this.app.workspace.setActiveLeaf(existing[0], { focus: true });
+      this.app.workspace.revealLeaf(existing[0]);
+      return;
+    }
+    const leaf = this.app.workspace.getLeaf(true);
+    await leaf.setViewState({ type: REVIEW_DASHBOARD_VIEW_TYPE, active: true });
     this.app.workspace.revealLeaf(leaf);
   }
 

@@ -54,3 +54,14 @@
 .review-archived-actions button { padding: 3px 10px; cursor: pointer; font-size: 0.85em; }
 .review-restore-btn { background: var(--interactive-accent); color: var(--text-on-accent); border: none; border-radius: 4px; }
 .review-delete-btn { background: var(--background-modifier-error); color: var(--text-on-accent); border: none; border-radius: 4px; }
+
+.review-dashboard-header h4 { margin: 0 0 12px 0; }
+.review-dashboard-table { width: 100%; border-collapse: collapse; font-size: 0.9em; }
+.review-dashboard-table th,
+.review-dashboard-table td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--background-modifier-border); }
+.review-dashboard-th { cursor: pointer; user-select: none; }
+.review-dashboard-th:hover { background: var(--background-modifier-hover); }
+.review-dashboard-row { cursor: pointer; }
+.review-dashboard-row:hover { background: var(--background-modifier-hover); }
+.review-dashboard-doc { font-family: var(--font-monospace); font-size: 0.85em; }
+.review-dashboard-overdue { color: var(--color-red); font-weight: 600; }
